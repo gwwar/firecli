@@ -7,12 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 // catsayCmd represents the catsay command
 var catsayCmd = &cobra.Command{
 	Use:   "catsay",
@@ -21,16 +15,19 @@ var catsayCmd = &cobra.Command{
 
 	If run with no arguments, it accepts standard input, word-wraps the message given, and prints the cat saying the
 	given message on standard output`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		dat, err := os.ReadFile("assets/cat.text")
-		check(err)
+		if ( err != nil ) {
+			return fmt.Errorf("couldn't read catsay asset: %w", err)
+		}
 		fmt.Println(string(dat))
+		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(catsayCmd)
+	RootCmd.AddCommand(catsayCmd)
 
 	// Here you will define your flags and configuration settings.
 

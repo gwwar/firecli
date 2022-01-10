@@ -1,6 +1,6 @@
 module github.com/gwwar/firecli
 
-go 1.13
+go 1.17
 
 require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
