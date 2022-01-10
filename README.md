@@ -26,6 +26,6 @@ cobra init
 go run main.go
 ```
 
-Go convention uses URLs for module names. To run local code before committing 
+Go convention uses URLs for module names. When testing multiple modules, to run local code before committing 
 we should add a replace alias in go.mod
 
