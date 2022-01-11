@@ -20,6 +20,7 @@ var catsayCmd = &cobra.Command{
 
 If run with no arguments, it prints a default message. This command also accepts piped input.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		out := os.Stdout
 		width := 80
 		writer := newWriter(width)
 		hideCat, e := cmd.Flags().GetBool("textonly")
@@ -28,18 +29,18 @@ If run with no arguments, it prints a default message. This command also accepts
 		}
 		showCat := !hideCat
 		if isInputFromPipe() {
-			return catsay(os.Stdin, writer, showCat)
+			return catsay(out, os.Stdin, writer, showCat)
 		}
 		if len(args) > 0 {
 			data := []byte(args[0])
-			return catsay(bytes.NewReader(data), writer, showCat)
+			return catsay(out, bytes.NewReader(data), writer, showCat)
 		}
 		message, e := cmd.Flags().GetString("message")
 		if e != nil {
 			return e
 		}
 		data := []byte(message)
-		return catsay(bytes.NewReader(data), writer, showCat)
+		return catsay(out, bytes.NewReader(data), writer, showCat)
 	},
 }
 
@@ -70,89 +71,79 @@ func newWriter(width int) *wordWrappedWriter {
 	return writer
 }
 
-func writeWord(w *wordWrappedWriter, word string) error {
+func writeWord(out io.Writer, w *wordWrappedWriter, word string) error {
 	var err error
-	var totalWritten int
 
 	if w.lineWidth == w.columnsLeft {
-		totalWritten, err = fmt.Print(w.dleft, " ")
-		w.columnsLeft -= totalWritten
+		_, err = fmt.Fprint(out, w.dleft, " ")
+		if err != nil {
+			return err
+		}
 	}
 
-	columns := utf8.RuneCountInString(word) + 1
+	columns := utf8.RuneCountInString(word)
 
-	if w.columnsLeft > columns {
-		totalWritten, err = fmt.Print(word, " ")
-		w.columnsLeft -= totalWritten
+	if w.columnsLeft >= columns {
+		_, err = fmt.Fprint(out, word)
+		w.columnsLeft -= columns
 	} else if columns > w.lineWidth {
 		//word is larger than linewidth, split it
 		runes := []rune(word)
 		first := string(runes[0 : w.columnsLeft-1])
 		rest := string(runes[w.columnsLeft-1 : columns])
-		_, err = fmt.Println(first + "-")
+		_, err = fmt.Fprintln(out, first+"-")
 		w.columnsLeft = w.lineWidth
 		if err != nil {
 			return err
 		}
-		return writeWord(w, rest)
+		return writeWord(out, w, rest)
 	} else {
 		//add a newline
-		if w.columnsLeft > 2 {
-			_, err = fmt.Println(strings.Repeat(" ", w.columnsLeft-2), w.dright)
-			if err != nil {
-				return err
-			}
-		} else if w.columnsLeft == 2 {
-			_, err = fmt.Println("", w.dright)
-			if err != nil {
-				return err
-			}
-		} else {
-			_, err = fmt.Println(w.dright)
-			if err != nil {
-				return err
-			}
+		e := lineReturn(out, w)
+		if e != nil {
+			return e
 		}
-		w.columnsLeft = w.lineWidth
-		return writeWord(w, word)
+		return writeWord(out, w, strings.TrimPrefix(word, " "))
 	}
 	return err
 }
 
-func catsay(r io.Reader, w *wordWrappedWriter, showCat bool) error {
+func lineReturn(out io.Writer, w *wordWrappedWriter) error {
+	spaces := strings.Repeat(" ", w.columnsLeft)
+	_, e := fmt.Fprintln(out, spaces, w.dright)
+	if e != nil {
+		return e
+	}
+	w.columnsLeft = w.lineWidth
+	return nil
+}
+
+func catsay(out io.Writer, r io.Reader, w *wordWrappedWriter, showCat bool) error {
 	//draw top
-	fmt.Println(strings.Repeat(w.dtop, w.lineWidth))
+	fmt.Fprintln(out, strings.Repeat(w.dtop, w.lineWidth+4))
 	// message
 	scanner := bufio.NewScanner(bufio.NewReader(r))
+	var spaceAndWord string
 	for scanner.Scan() {
 		words := strings.Fields(scanner.Text())
 		for _, word := range words {
-			e := writeWord(w, word)
+			if w.columnsLeft == w.lineWidth {
+				spaceAndWord = word
+			} else {
+				spaceAndWord = " " + word
+			}
+			e := writeWord(out, w, spaceAndWord)
 			if e != nil {
 				return e
 			}
 		}
 	}
-	if w.columnsLeft != w.lineWidth {
-		if w.columnsLeft > 2 {
-			_, e := fmt.Println(strings.Repeat(" ", w.columnsLeft-2), w.dright)
-			if e != nil {
-				return e
-			}
-		} else if w.columnsLeft == 2 {
-			_, e := fmt.Println("", w.dright)
-			if e != nil {
-				return e
-			}
-		} else {
-			_, e := fmt.Println(w.dright)
-			if e != nil {
-				return e
-			}
-		}
+	e := lineReturn(out, w)
+	if e != nil {
+		return e
 	}
 	//draw bottom
-	fmt.Println(strings.Repeat(w.dbottom, w.lineWidth))
+	fmt.Println(strings.Repeat(w.dbottom, w.lineWidth+4))
 	// ascii cat
 	if showCat {
 		dat, e := os.ReadFile("assets/cat.text")
