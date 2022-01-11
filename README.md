@@ -12,7 +12,14 @@ https://docs.docker.com/get-started/#download-and-install-docker-desktop
 Build the image with a named tag and run it:
 ```zsh
 docker build -t firecli .
-docker run -p 9090:9090 firecli
+echo "hello" | docker run -i firecli catsay
+```
+
+### Testing
+
+To run tests locally:
+```zsh
+go test -v ./... 
 ```
 
 ### Misc Notes
@@ -28,4 +35,3 @@ go run main.go
 
 Go convention uses URLs for module names. When testing multiple modules, to run local code before committing 
 we should add a replace alias in go.mod
-
