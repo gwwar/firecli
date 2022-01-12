@@ -6,9 +6,6 @@ WORKDIR /app
 COPY ./ /app
 # Download 3rd party dependencies
 RUN go mod download
-COPY *.go ./
-RUN go build -o /demoapp
+RUN go install main.go
 
-EXPOSE 2112
-
-CMD ["/demoapp"]
+ENTRYPOINT ["main"]
