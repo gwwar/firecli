@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+
+rule_files:
+  - alert.yml
+
+scrape_configs:
+  - job_name: services
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - 'prometheus:9090'
+          - 'idonotexist:564'
+          - 'demoapp:2112'
+# remotes need a /metrics endpoint implemented
+#  - job_name: 'remote'
+#    scheme: https
+#    static_configs:
+#      - targets: ['gwwar.com', 'google.com']

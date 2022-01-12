@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  # a toy Go app, that implements the /metrics endpoint
+  demoapp:
+      build: ./demoapp
+      ports:
+        - 2112:2112
+  # prometheus instance, which has a health job
+  prometheus:
+    image: prom/prometheus:v2.21.0
+    ports:
+      - 9000:9090
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yml
+    # allows reloading of rules without restart
+    # curl -X POST http://localhost:9000/-/reload
+
+volumes:
+  prometheus-data:
