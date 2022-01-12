@@ -16,8 +16,8 @@ echo "hello" | docker run -i firecli catsay
 ```
 
 Before running any commands related to prometheus, let's start up two local services:
-    - demoapp on port 2112 / A toy Go application that instruments the prometheus /metrics endpoint
-    - prometheus on port 9000 - A local prometheus monitoring service 
+- demoapp on port 2112 - A toy Go application that instruments the prometheus /metrics endpoint
+- prometheus on port 9000 - A local prometheus monitoring service 
 ```zsh
 docker-compose -d up #-d for detached mode
 ```
