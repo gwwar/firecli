@@ -35,6 +35,7 @@ func reload(prometheusBaseURL string, out io.Writer) error {
 		// %w wraps the error, so it can be later unwrapped with errors.Unwrap
 		return fmt.Errorf("Failed to make a reload request object: %w", err)
 	}
+	request.Header.Add("User-Agent", "🔥cli https://github.com/gwwar/firecli")
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
