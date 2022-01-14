@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +17,12 @@ var reloadCmd = &cobra.Command{
 	Short: "Reloads the prometheus configuration",
 	Long:  `If changes were made to the prometheus configuration, this triggers a reload without needing to restart the service`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return reload("http://localhost:9000", os.Stdout)
+		prometheusBaseURL := viper.GetString("prometheusBaseURL")
+		if prometheusBaseURL == "" {
+			fmt.Println("No promethusBaseURL set in .firecli.yaml config, using default of http://localhost:9000")
+			prometheusBaseURL = "http://localhost:9000"
+		}
+		return reload(prometheusBaseURL, os.Stdout)
 	},
 }
 
@@ -28,7 +35,10 @@ func reload(prometheusBaseURL string, out io.Writer) error {
 		// %w wraps the error, so it can be later unwrapped with errors.Unwrap
 		return fmt.Errorf("Failed to make a reload request object: %w", err)
 	}
-	response, err := http.DefaultClient.Do(request)
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return fmt.Errorf("Failed to make a reload request to prometheus: %w", err)
 	}
