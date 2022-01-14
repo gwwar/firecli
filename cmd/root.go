@@ -42,7 +42,7 @@ func initConfig() {
 	} else {
 		home, err := os.UserHomeDir()
 		if err != nil {
-			wrapped := fmt.Errorf("Failed to make a reload request to prometheus: %w", err)
+			wrapped := fmt.Errorf("Failed to find the home directory while searching for .firecli.yaml: %w", err)
 			fmt.Println(wrapped)
 			os.Exit(1)
 		}
